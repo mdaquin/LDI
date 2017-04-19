@@ -1,0 +1,37 @@
+doctype html
+html
+  head
+      link(rel='stylesheet', href='/css/index.css')
+      script(type='text/javascript' src='js/ldi.js')
+      script(src="https://code.jquery.com/jquery-3.2.1.min.js", integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=", crossorigin="anonymous")
+      title LDI
+
+body
+
+script.
+   var endpoint="#{conf.endpoint}";
+   var tclass="#{conf.tclass}";
+   var graph="#{conf.graph}";
+
+
+div#main
+
+  div#header
+     span.title LDI - #{title} 
+     a(href='about') (about) 
+
+  div#leftpanel
+     div#searchparam
+           div#querydiv
+             input#querytext(type="text", name="query", placeholder="keywords", value="#{query}") 
+             input(type="submit", onclick="newquery()")
+           div#propdisplay.
+                properties - #{pres}
+     div#collectioncontrol
+         This is there
+
+  div#rightpanel.
+     results - #{qres}
+
+
+
