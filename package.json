@@ -8,7 +8,7 @@
     "watch-css": "stylus source/stylesheets/index.styl -o static/css -w",
     "clean": "rm -rf static/css && mkdir -p static/css && rm `find . -name '*~'`",
     "build": "npm run clean && npm run build-css",
-    "watch": "npm run clean && npm run watch-css & nodemon server -e js,jade",
+    "watch": "npm run watch-css & nodemon server -e js,jade",
     "start": "node server"
   },
   "repository": {
@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/mdaquin/LDI#readme",
   "dependencies": {
+    "body-parser": "^1.17.1",
     "express": "^4.15.2",
     "jade": "^1.11.0",
     "morgan": "^1.8.1",

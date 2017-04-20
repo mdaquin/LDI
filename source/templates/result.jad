@@ -20,13 +20,12 @@ div#main
              input#querytext(type="text", name="query", placeholder="keywords", value="#{query}") 
              input(type="submit", onclick="newQuery()")
            div#propdisplay.
-                Click on submit above to get results... 
+                properties - #{pres}
      div#collectioncontrol
          This is there
 
-  div#rightpanel
-     div.result.
-         click on submit on the left to get results...
+  div#rightpanel.
+     results - #{qres}
 
 
 
