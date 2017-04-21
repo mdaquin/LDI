@@ -6,6 +6,7 @@ var express = require('express')
 , rtemplate = jade.compileFile(__dirname + '/source/templates/result.jade')
 , tools = require('./app')
 , bodyParser = require('body-parser')
+, sleep = require('sleep')
 
 app.use(logger('dev'));
 app.use(express.static(__dirname + '/static'));
@@ -32,15 +33,44 @@ app.post('/query', function (req, res, next) {
 	    res.send({error: "missing query parameter q", query: req.body});
 	    return;
 	}
+	var sendback = {results: [], props: {}};
+	var propsback = false;
+	var datacount = 10000;
 	tools.query(req.body.q, {}, function (chunk){
+	    console.log("back from querying");
 	    var data = JSON.parse(chunk);
-	    var sendback = [];
+	    datacount = data['results']['bindings'].length;
+	    console.log("data count = "+datacount);
 	    for (var x in data['results']['bindings']){
-		var rdata = tools.getDataForResult(data['results']['bindings'][x]['x']['value']);
-		var html = rtemplate(rdata);
-		sendback.push(html);
+		var rdata = tools.getDataForResult(
+		    data['results']['bindings'][x]['x']['value'],
+		    function(r, rdata){
+			var tdata = tools.renderData(r, rdata);
+			var html = rtemplate(tdata);
+			sendback.results.push(html);
+			if (sendback.results.length == datacount
+			    && propsback)
+			    res.send(sendback);
+		    });		
 	    }
-	    res.send(sendback);
+	});
+	tools.getProperties(req.body.q, {}, function (chunk){
+	    console.log("props back");
+	    var data = JSON.parse(chunk).results.bindings;
+	    for (var x in data){
+		if (data[x]['n'].value != '1'){
+		    if (!sendback.props[data[x]['p'].value])
+			sendback.props[data[x]['p'].value] = [];
+		    sendback.props[data[x]['p'].value].push({value:
+								data[x]['o'].value,
+								count:
+								data[x]['n'].value});
+		}
+	    }
+	    propsback = true;
+	    if (sendback.results.length == datacount
+		&& propsback)
+		res.send(sendback);
 	});
     } catch (e) {
 	next(e)
