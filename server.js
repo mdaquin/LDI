@@ -33,10 +33,11 @@ app.post('/query', function (req, res, next) {
 	    res.send({error: "missing query parameter q", query: req.body});
 	    return;
 	}
-	var sendback = {results: [], props: {}};
+	var filters = tools.getFilters(req.body);
+	var sendback = {results: [], props: {}, filters: filters};
 	var propsback = false;
 	var datacount = 10000;
-	tools.query(req.body.q, {}, function (chunk){
+	tools.query(req.body.q, filters, function (chunk){
 	    console.log("back from querying");
 	    var data = JSON.parse(chunk);
 	    datacount = data['results']['bindings'].length;
@@ -54,7 +55,7 @@ app.post('/query', function (req, res, next) {
 		    });		
 	    }
 	});
-	tools.getProperties(req.body.q, {}, function (chunk){
+	tools.getProperties(req.body.q, filters, function (chunk){
 	    console.log("props back");
 	    var data = JSON.parse(chunk).results.bindings;
 	    for (var x in data){

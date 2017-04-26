@@ -1,11 +1,14 @@
-
-
 // TODO find a way to run the query on load...
 
 function newQuery(){
     var keywords = $("#querytext").val();
+    var filters = [];
     updateURL(keywords);
-    makeQuery(keywords, {});    
+    $("input:checked").each(function(index){
+	filters.push({prop: $(this).attr("prop"), val: $(this).attr("val")});
+    });
+    console.log(filters);
+    makeQuery(keywords, filters);    
 }
 
 function updateURL(kw){
@@ -36,9 +39,15 @@ function displayResults(data){
     $('#rightpanel').html(st);
 }
 
+function filterIncluded(p,v,f){
+    for (var i in f){
+	if (f[i].prop == p && f[i].val == v) return true;
+    }
+    return false;
+}
+
 function displayProperties(data){
-    var st = "";
-    
+    var st = "";    
     for(var prop in data.props){
 	st+='<div class="property">'
 	    + '<div class="proplabel">'
@@ -46,11 +55,15 @@ function displayProperties(data){
 	    + '</div>';
 	for (var v in data.props[prop]){
 	    st += '<div class="propvalue">'
-		+'<input type="checkbox">'
+		+'<input prop="'+prop+'" val="'+data.props[prop][v].value+'" type="checkbox" ';
+	    if (filterIncluded(prop, data.props[prop][v].value, data.filters)){
+		st += "checked";
+	    }
+	    st+='>'
 		+ fragment(data.props[prop][v].value)
 		+ ' ('
 		+ data.props[prop][v].count
-		+ ')</div>';
+		+ ')</input></div>';
 	}
 	st+= '</div>';	
     }

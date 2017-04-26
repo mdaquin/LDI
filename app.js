@@ -4,66 +4,106 @@ var http = require('request')
 module.exports = {
     query: function(query, filters, callback){
 	var kws = query.split(' ');	
-	var query = 'select distinct ?x where {graph <'
+	var query = 'select distinct ?x \n where {graph <'
 	    + conf.graph
-	    + '> {'
-	    + '?x a <'
+	    + '> { \n'
+	    + '   ?x a <'
 	    + conf.tclass
-	    + '>. ?x ?p ?o. ';
+	    + '>. \n    ?x ?p ?o. \n';
 	for (var kw in kws){
-	    query += 'filter regex(str(?o), "'+kws[kw]+'", "i") .';
+	    query += '   filter regex(str(?o), "'+kws[kw]+'", "i") . \n';
+	}
+	for (var f in filters){
+	    var fa = filters[f].prop.split('|');
+	    if (fa.length==1){
+		query += '   ?x <'+fa[0]+'> ?fv'+f+' . \n'
+		    + '   filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+	    } else if (fa.length==2){
+		query += '   ?x <'+fa[0]+'> [  '
+		    + '<'+fa[1]+'> ?fv'+f+' ] . \n'
+		    + '   filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+	    } else {
+		console.log("Warning: No support for filters over more than 2 properties.");
+	    }
 	}
 	query += '}} limit 10';
+	console.log(query);
 	var url = conf.endpoint+"?output=json&query="+escape(query);
 	this.makeRequest(url, callback);
     },
     getProperties: function(query, filters, callback){
 	var kws = query.split(' ');	
-	var query = 'select distinct ?p ?o (count(distinct ?x) as ?n) where {graph <'
+	var query = 'select distinct ?p ?o (count(distinct ?x) as ?n) \n where {graph <'
 	    + conf.graph
-	    + '> { {'
+	    + '> { { \n'
 	    + '?x a <'
 	    + conf.tclass
-	    + '>. ?x ?p ?o. '
+	    + '>. \n ?x ?p ?o. \n'
 	    + 'filter (?p not in (';
 	var count=0;
 	for (var bw in conf.propblacklist){
 	    query+='<'+conf.propblacklist[bw]+'>';
 	    count++;
-	    if (count!= conf.propblacklist.length) query+=',';
+	    if (count!= conf.propblacklist.length) query+=', \n';
 	}
-	query += ')) . ';
+	query += ')) . \n';
 	for (var kw in kws){
-	    query += 'filter regex(str(?o), "'+kws[kw]+'", "i") .';
+	    query += 'filter regex(str(?o), "'+kws[kw]+'", "i") . \n';
 	}
-	    query += '} UNION { '
+	for (var f in filters){
+	    var fa = filters[f].prop.split('|');
+	    if (fa.length==1){
+		query += '?x <'+fa[0]+'> ?fv'+f+' . \n'
+		    + 'filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+	    } else if (fa.length==2){
+		query += '?x <'+fa[0]+'> [  '
+		    + '<'+fa[1]+'> ?fv'+f+' ] . \n '
+		    + 'filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+	    } else {
+		console.log("Warning: No support for filters over more than 2 properties.");
+	    }
+	}
+	    query += '} UNION { \n'
 	    + '?x a <'
 	    + conf.tclass
-	    + '>. '
-	    + '?x ?q ?y . '
+	    + '>. \n'
+	    + '?x ?q ?y . \n'
 	    + 'filter (?q not in (';
 	count=0;
 	for (var bw in conf.propblacklist){
 	    query+='<'+conf.propblacklist[bw]+'>';
 	    count++;
-	    if (count!= conf.propblacklist.length) query+=',';
+	    if (count!= conf.propblacklist.length) query+=', \n';
 	}
-	query += ')) . '
-	    + '?y ?t ?o . '
+	query += ')) . \n'
+	    + '?y ?t ?o . \n'
 	    + 'filter (?t not in (';
 	count=0;
 	for (var bw in conf.propblacklist){
 	    query+='<'+conf.propblacklist[bw]+'>';
 	    count++;
-	    if (count!= conf.propblacklist.length) query+=',';
+	    if (count!= conf.propblacklist.length) query+=', \n';
 	}
-	query += ')) . '
-            + 'bind(concat(concat(str(?q), "|"), str(?t)) as ?p) .';
+	query += ')) . \n'
+            + 'bind(concat(concat(str(?q), "|"), str(?t)) as ?p) . \n';
 	for (var kw in kws){
-	    query += 'filter regex(str(?y), "'+kws[kw]+'", "i") .';
+	    query += 'filter regex(str(?y), "'+kws[kw]+'", "i") . \n';
+	}
+		for (var f in filters){
+	    var fa = filters[f].prop.split('|');
+	    if (fa.length==1){
+		query += '?x <'+fa[0]+'> ?fv'+f+' . \n'
+		    + 'filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+	    } else if (fa.length==2){
+		query += '?x <'+fa[0]+'> [  '
+		    + '<'+fa[1]+'> ?fv'+f+' ] . \n'
+		    + 'filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+	    } else {
+		console.log("Warning: No support for filters over more than 2 properties.");
+	    }
 	}
 	query += '}}} group by ?p ?o order by desc(?n)';
-	// console.log(query);
+//        console.log(query);
 	var url = conf.endpoint+"?output=json&query="+escape(query);
 	this.makeRequest(url, callback);
     },
@@ -98,6 +138,7 @@ module.exports = {
     },
     renderData: function(r, rdata){
 	var res = {
+	    resource: r,
 	    title:"Title not found or configured",
 	    description: "Description not found or configured",
 	    others: [],
@@ -115,5 +156,22 @@ module.exports = {
 		res.description = "Description text not found in data";
 	}
 	return res;
+    },
+    getFilters: function(body){
+	var index = 0;
+	var results = [];
+	var done=false;
+	while(!done){
+	    if (body['f['+index+'][prop]']){
+		results.push({
+		    prop: body['f['+index+'][prop]'],
+		    val: body['f['+index+'][val]']
+		});
+	    } else {
+		done = true;
+	    }
+	    index++;
+	}
+	return results;
     }
 }
