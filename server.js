@@ -56,10 +56,10 @@ app.post('/query', function (req, res, next) {
 	    }
 	});
 	tools.getProperties(req.body.q, filters, function (chunk){
-	    console.log("props back");
 	    var data = JSON.parse(chunk).results.bindings;
 	    for (var x in data){
-		if (data[x]['n'].value != '1'){
+//		console.log(data[x]);
+		if (data[x]['n'].value != '1' && data[x]['n'].value != '0'){
 		    if (!sendback.props[data[x]['p'].value])
 			sendback.props[data[x]['p'].value] = [];
 		    sendback.props[data[x]['p'].value].push({value:

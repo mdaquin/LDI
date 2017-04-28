@@ -28,7 +28,9 @@ module.exports = {
 	}
 	query += '}} limit 10';
 	console.log(query);
-	var url = conf.endpoint+"?output=json&query="+escape(query);
+	console.log(escape(query).replace(/\+/g, '%2B'));
+	var url = conf.endpoint+"?output=json&query="+escape(query).replace(/\+/g, '%2B');
+	console.log(url)
 	this.makeRequest(url, callback);
     },
     getProperties: function(query, filters, callback){
@@ -36,75 +38,75 @@ module.exports = {
 	var query = 'select distinct ?p ?o (count(distinct ?x) as ?n) \n where {graph <'
 	    + conf.graph
 	    + '> { { \n'
-	    + '?x a <'
+	    + '    ?x a <'
 	    + conf.tclass
-	    + '>. \n ?x ?p ?o. \n'
-	    + 'filter (?p not in (';
+	    + '>. \n     ?x ?p ?o. ?x ?p2 ?o2 . \n'
+	    + '    filter (?p not in (';
 	var count=0;
 	for (var bw in conf.propblacklist){
 	    query+='<'+conf.propblacklist[bw]+'>';
 	    count++;
-	    if (count!= conf.propblacklist.length) query+=', \n';
+	    if (count!= conf.propblacklist.length) query+=', \n      ';
 	}
 	query += ')) . \n';
 	for (var kw in kws){
-	    query += 'filter regex(str(?o), "'+kws[kw]+'", "i") . \n';
+	    query += '    filter regex(str(?o2), "'+kws[kw]+'", "i") . \n';
 	}
 	for (var f in filters){
 	    var fa = filters[f].prop.split('|');
 	    if (fa.length==1){
-		query += '?x <'+fa[0]+'> ?fv'+f+' . \n'
-		    + 'filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+		query += '    ?x <'+fa[0]+'> ?fv'+f+' . \n'
+		    + '    filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
 	    } else if (fa.length==2){
-		query += '?x <'+fa[0]+'> [  '
+		query += '    ?x <'+fa[0]+'> [  '
 		    + '<'+fa[1]+'> ?fv'+f+' ] . \n '
-		    + 'filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+		    + '    filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
 	    } else {
 		console.log("Warning: No support for filters over more than 2 properties.");
 	    }
 	}
-	    query += '} UNION { \n'
-	    + '?x a <'
+	    query += '  } UNION { \n'
+	    + '    ?x a <'
 	    + conf.tclass
 	    + '>. \n'
-	    + '?x ?q ?y . \n'
-	    + 'filter (?q not in (';
+	    + '    ?x ?q ?y . ?x ?p2 ?o2 . \n'
+	    + '    filter (?q not in (';
 	count=0;
 	for (var bw in conf.propblacklist){
 	    query+='<'+conf.propblacklist[bw]+'>';
 	    count++;
-	    if (count!= conf.propblacklist.length) query+=', \n';
+	    if (count!= conf.propblacklist.length) query+=', \n      ';
 	}
 	query += ')) . \n'
-	    + '?y ?t ?o . \n'
-	    + 'filter (?t not in (';
+	    + '    ?y ?t ?o . \n'
+	    + '    filter (?t not in (';
 	count=0;
 	for (var bw in conf.propblacklist){
 	    query+='<'+conf.propblacklist[bw]+'>';
 	    count++;
-	    if (count!= conf.propblacklist.length) query+=', \n';
+	    if (count!= conf.propblacklist.length) query+=', \n      ';
 	}
 	query += ')) . \n'
-            + 'bind(concat(concat(str(?q), "|"), str(?t)) as ?p) . \n';
+            + '    bind(concat(concat(str(?q), "|"), str(?t)) as ?p) . \n';
 	for (var kw in kws){
-	    query += 'filter regex(str(?y), "'+kws[kw]+'", "i") . \n';
+	    query += '    filter regex(str(?o2), "'+kws[kw]+'", "i") . \n';
 	}
 		for (var f in filters){
 	    var fa = filters[f].prop.split('|');
 	    if (fa.length==1){
-		query += '?x <'+fa[0]+'> ?fv'+f+' . \n'
-		    + 'filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+		query += '    ?x <'+fa[0]+'> ?fv'+f+' . \n'
+		    + '    filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
 	    } else if (fa.length==2){
-		query += '?x <'+fa[0]+'> [  '
+		query += '    ?x <'+fa[0]+'> [  '
 		    + '<'+fa[1]+'> ?fv'+f+' ] . \n'
-		    + 'filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
+		    + '    filter (str(?fv'+f+') = "'+filters[f].val+'") . \n';
 	    } else {
 		console.log("Warning: No support for filters over more than 2 properties.");
 	    }
 	}
 	query += '}}} group by ?p ?o order by desc(?n)';
-//        console.log(query);
-	var url = conf.endpoint+"?output=json&query="+escape(query);
+        console.log(query);
+	var url = conf.endpoint+"?output=json&query="+escape(query).replace(/\+/g, '%2B');
 	this.makeRequest(url, callback);
     },
     makeRequest: function(url, callback){
