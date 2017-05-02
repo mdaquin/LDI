@@ -1,5 +1,7 @@
 var http = require('request')
 , conf = require('./conf.js')
+, fs = require('fs')
+, md5 = require('md5')
 
 module.exports = {
     query: function(query, filters, callback){
@@ -26,11 +28,8 @@ module.exports = {
 		console.log("Warning: No support for filters over more than 2 properties.");
 	    }
 	}
-	query += '}} limit 10';
-	console.log(query);
-	console.log(escape(query).replace(/\+/g, '%2B'));
+	query += '}} limit 100';
 	var url = conf.endpoint+"?output=json&query="+escape(query).replace(/\+/g, '%2B');
-	console.log(url)
 	this.makeRequest(url, callback);
     },
     getProperties: function(query, filters, callback){
@@ -105,35 +104,67 @@ module.exports = {
 	    }
 	}
 	query += '}}} group by ?p ?o order by desc(?n)';
-        console.log(query);
 	var url = conf.endpoint+"?output=json&query="+escape(query).replace(/\+/g, '%2B');
 	this.makeRequest(url, callback);
     },
     makeRequest: function(url, callback){
-	http(url, function(error, res, body) {
-	    console.log('error:', error);
-	    console.log('statusCode:', res && res.statusCode);
-	    if (res.statusCode != 200)
-		console.log(body);
-	    callback(body);
-	});
+	if (fs.existsSync('cache/'+md5(url))){
+	    fs.readFile('cache/'+md5(url), 'utf8', function (err,data) {
+		if (err) { 
+		    console.log(err);
+		    callback();		   
+		}
+		else callback(data);
+	    });
+	}
+	else {
+	    http(url, function(error, res, body) {
+		console.log('error:', error);
+		console.log('statusCode:', res && res.statusCode);
+		if (!res || res.statusCode != 200){
+		    console.log("Error::"+body);
+		    callback();
+		}
+		else {
+		    fs.writeFile("cache/"+md5(url), body, function(err) {
+			if(err) return console.log(err);
+		    }); 
+		    callback(body);
+		}
+	    });
+	}
     },
+    
     getDataForResult: function(r, callback){
-	console.log("Querying "+r);
 	var that = this;
-	var options = {
-	    url: r,
-	    headers: {
-		'Accept': 'application/rdf+json'
-	    }
-	};
-	http(options, function(error, res, body) {
-	    console.log('error:', error);
-	    console.log('statusCode:', res && res.statusCode);
-	    if (res.statusCode != 200)
-		console.log(body);
-	    that.URIDataCallback(r, body, callback)
-	});	    
+	if (fs.existsSync('cache/'+md5(r))){
+	    fs.readFile('cache/'+md5(r), 'utf8', function (err,data) {
+		if (err) return console.log(err);
+		that.URIDataCallback(r, data, callback)
+	    });
+	}
+	else {
+	    console.log("Querying "+r);
+	    var options = {
+		url: r,
+		headers: {
+		    'Accept': 'application/rdf+json'
+		}
+	    };
+	    http(options, function(error, res, body) {
+		console.log('error:', error);
+		console.log('statusCode:', res && res.statusCode);
+		if (!res || res.statusCode != 200){
+		    console.log(body);
+		}
+		else {
+		    fs.writeFile("cache/"+md5(r), body, function(err) {
+			if(err) return console.log(err);
+		    }); 
+		    that.URIDataCallback(r, body, callback);
+		}
+	    });	    
+	}
     },
     URIDataCallback: function (r, body, callback){
 	callback(r, JSON.parse(body));

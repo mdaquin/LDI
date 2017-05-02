@@ -15,15 +15,34 @@ function updateURL(kw){
     history.pushState({}, null, '/?q='+escape(kw));
 }
 
+
+function displayLoading(display){
+    if (display){
+	$('#loadingmessage').css('display','block');
+    } else {
+	$('#loadingmessage').css('display','none');
+    }
+}
+
+
 function makeQuery(kw, filters){
+    displayLoading(true);
     var url='/query';
     $.ajax({
 	url: url,
 	type: "POST",
 	data: {q: kw, f: filters}
     }).done(function(data) {
-	displayResults(data);
-	displayProperties(data);
+	displayLoading(false);
+	if (data.error){
+	    alert("something went wrong: "+data.error);
+	} else {
+	    displayResults(data);
+	    displayProperties(data);
+	}
+    }).fail(function(){
+	displayLoading(false);
+	alert("something went wrong...");
     });
 }
 

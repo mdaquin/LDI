@@ -8,6 +8,10 @@ TODO:
   * caching of URI dereferencing and query results
   * better title
 
+Install:
+  * create cache directory writable by the user running the LDI
+  * npm install md5
+  
 
   
 

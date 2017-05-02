@@ -37,8 +37,10 @@ app.post('/query', function (req, res, next) {
 	var sendback = {results: [], props: {}, filters: filters};
 	var propsback = false;
 	var datacount = 10000;
+	var sent = false;
 	tools.query(req.body.q, filters, function (chunk){
 	    console.log("back from querying");
+	    if ((!chunk || chunk==undefined || chunk=="undefined") && !sent) {sent=true;res.send({error: "Querying failed"}); return;}
 	    var data = JSON.parse(chunk);
 	    datacount = data['results']['bindings'].length;
 	    console.log("data count = "+datacount);
@@ -56,6 +58,7 @@ app.post('/query', function (req, res, next) {
 	    }
 	});
 	tools.getProperties(req.body.q, filters, function (chunk){
+	    if ((!chunk || chunk==undefined || chunk=="undefined") && !sent) {sent=true; res.send({error: "querying failed"}); return;}
 	    var data = JSON.parse(chunk).results.bindings;
 	    for (var x in data){
 //		console.log(data[x]);
