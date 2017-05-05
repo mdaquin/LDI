@@ -11,7 +11,13 @@ TODO:
 Install:
   * create cache directory writable by the user running the LDI
   * npm install md5
-  
+
+
+Configuration:
+  * in conf.js, change the endpoint, graph and class being queried.
+  * also update the properties used to display the title and snippets of results.
+
+
 
   
 
